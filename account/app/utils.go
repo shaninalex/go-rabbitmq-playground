@@ -42,8 +42,8 @@ func connectToRabbitMQ(connectionString string) (*amqp.Connection, error) {
 	return connection, nil
 }
 
-func ConnectDB() *mongo.Client {
-	Mongo_URL := "mongodb://127.0.0.1:27017"
+func ConnectDB(connectionString string) *mongo.Client {
+	Mongo_URL := connectionString
 	client, err := mongo.NewClient(options.Client().ApplyURI(Mongo_URL))
 	if err != nil {
 		log.Fatal(err)
@@ -59,6 +59,6 @@ func ConnectDB() *mongo.Client {
 }
 
 func GetCollection(client *mongo.Client, collectionName string) *mongo.Collection {
-	collection := client.Database("application").Collection("accounts")
+	collection := client.Database("application").Collection(collectionName)
 	return collection
 }

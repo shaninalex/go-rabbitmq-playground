@@ -1,8 +1,13 @@
 package app
 
 import (
+	"context"
+	"log"
+
 	"github.com/gin-gonic/gin"
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 
 	amqp "github.com/rabbitmq/amqp091-go"
 )
@@ -19,8 +24,23 @@ type App struct {
 func (app *App) Initialize(mongo_connection, rabbitmq_connection string) error {
 
 	app.router = gin.Default()
-	client := ConnectDB()
-	app.Collection = GetCollection(client, "application")
+	client := ConnectDB(mongo_connection)
+	app.Collection = GetCollection(client, "accounts")
+	indexes := []mongo.IndexModel{
+		{
+			Keys:    bson.D{{Key: "email", Value: 1}},
+			Options: options.Index().SetUnique(true),
+		},
+		{
+			Keys:    bson.D{{Key: "username", Value: 1}},
+			Options: options.Index().SetUnique(true),
+		},
+	}
+	indexName, err := app.Collection.Indexes().CreateMany(
+		context.Background(),
+		indexes,
+	)
+	log.Printf("Indexes created: %v", indexName)
 
 	// Connect with RabbitMQ
 	mq_connection, err := connectToRabbitMQ(rabbitmq_connection)
@@ -36,9 +56,9 @@ func (app *App) Initialize(mongo_connection, rabbitmq_connection string) error {
 
 func (app *App) initializeRoutes() {
 	app.router.GET("/ping", Ping)
-	app.router.GET("/account/:sub", app.GetUser)
 	app.router.POST("/account", app.CreateUser)
-	app.router.PATCH("/account", app.UpdateUser)
+	app.router.GET("/account/:id", app.GetUser)
+	app.router.PATCH("/account/:id", app.UpdateUser)
 }
 
 func (app *App) Run() {
