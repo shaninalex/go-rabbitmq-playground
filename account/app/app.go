@@ -19,13 +19,14 @@ import (
 // - "loggin" - for sending logging messages
 // - "manage" - background tasks like update avatar link from filestorage service, or schedule payments etc...
 type App struct {
-	Collection         *mongo.Collection
-	RabbitMQConnection *amqp.Connection
-	router             *gin.Engine
+	Collection   *mongo.Collection
+	router       *gin.Engine
+	MQConnection *amqp.Connection
+	MQChannel    *amqp.Channel
+	MQQueue      *amqp.Queue
 }
 
 func (app *App) Initialize(mongo_connection, rabbitmq_connection string) error {
-
 	app.router = gin.Default()
 	client := ConnectDB(mongo_connection)
 	app.Collection = GetCollection(client, "accounts")
@@ -58,8 +59,23 @@ func (app *App) Initialize(mongo_connection, rabbitmq_connection string) error {
 	if err != nil {
 		return err
 	}
-	defer mq_connection.Close()
-	app.RabbitMQConnection = mq_connection
+
+	ch, err := mq_connection.Channel()
+	failOnError(err, "Failed to open a channel")
+	q, err := ch.QueueDeclare(
+		"register", // name
+		false,      // durable
+		false,      // delete when unused
+		false,      // exclusive
+		false,      // no-wait
+		nil,        // arguments
+	)
+	failOnError(err, "Failed to declare a queue")
+
+	app.MQConnection = mq_connection
+	app.MQChannel = ch
+	app.MQQueue = &q
+
 	app.initializeRoutes()
 
 	return nil

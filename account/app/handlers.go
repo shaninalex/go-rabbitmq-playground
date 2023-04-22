@@ -33,6 +33,8 @@ func (app *App) CreateUser(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
 		return
 	}
+
+	Publish("register", fmt.Sprintf("New User registered with %s id", newUser.Sub), app.MQChannel, app.MQQueue)
 	c.JSON(http.StatusCreated, gin.H{"success": true})
 }
 
@@ -79,6 +81,5 @@ func (app *App) UpdateUser(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"message": "Unable to update account"})
 		return
 	}
-
 	c.JSON(http.StatusOK, gin.H{"success": true})
 }
