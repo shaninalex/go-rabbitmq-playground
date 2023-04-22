@@ -1,75 +1,46 @@
 package app
 
 import (
-	"context"
-	"log"
-	"math"
-	"time"
-
 	"github.com/gin-gonic/gin"
-	amqp "github.com/rabbitmq/amqp091-go"
 	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
+
+	amqp "github.com/rabbitmq/amqp091-go"
 )
 
+// TODO: add rabbitmq exchange instead. For example:
+// - "loggin" - for sending logging messages
+// - "manage" - background tasks like update avatar link from filestorage service, or schedule payments etc...
 type App struct {
-	MongoConnection    *mongo.Client
+	Collection         *mongo.Collection
 	RabbitMQConnection *amqp.Connection
 	router             *gin.Engine
 }
 
 func (app *App) Initialize(mongo_connection, rabbitmq_connection string) error {
 
-	// Connect with MongoDB
-	mongo_client, err := mongo.Connect(context.TODO(), options.Client().ApplyURI(mongo_connection))
-	if err != nil {
-		return err
-	}
-
-	app.MongoConnection = mongo_client
-
-	defer func() {
-		if err := mongo_client.Disconnect(context.TODO()); err != nil {
-			panic(err)
-		}
-	}()
+	app.router = gin.Default()
+	client := ConnectDB()
+	app.Collection = GetCollection(client, "application")
 
 	// Connect with RabbitMQ
-	app.RabbitMQConnection, err = connectToRabbitMQ("amqp://guest:guest@localhost:5672/")
+	mq_connection, err := connectToRabbitMQ(rabbitmq_connection)
 	if err != nil {
 		return err
 	}
-	defer app.RabbitMQConnection.Close()
+	defer mq_connection.Close()
+	app.RabbitMQConnection = mq_connection
+	app.initializeRoutes()
 
 	return nil
 }
 
-func connectToRabbitMQ(connectionString string) (*amqp.Connection, error) {
-	var counts int64
-	var backOff = 1 * time.Second
-	var connection *amqp.Connection
+func (app *App) initializeRoutes() {
+	app.router.GET("/ping", Ping)
+	app.router.GET("/account/:sub", app.GetUser)
+	app.router.POST("/account", app.CreateUser)
+	app.router.PATCH("/account", app.UpdateUser)
+}
 
-	for {
-		c, err := amqp.Dial(connectionString)
-		if err != nil {
-			log.Println("RabbitMQ not yet ready...")
-			counts++
-		} else {
-			log.Println("Connected to RabbitMQ")
-			connection = c
-			break
-		}
-
-		if counts > 5 {
-			log.Println(err)
-			return nil, err
-		}
-
-		backOff = time.Duration(math.Pow(float64(counts), 2)) * time.Second
-		log.Println("backing off...")
-		time.Sleep(backOff)
-		continue
-	}
-
-	return connection, nil
+func (app *App) Run() {
+	app.router.Run("localhost:8000")
 }
