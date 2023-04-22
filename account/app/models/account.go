@@ -106,15 +106,16 @@ func createBSONM(myStruct interface{}) (bson.M, error) {
 }
 
 func updateAccountStruct(main *GetCreateAccount, update *UpdateAccount) {
-	mainValue := reflect.ValueOf(main).Elem()
-	updateValue := reflect.ValueOf(update).Elem()
-
-	for i := 0; i < mainValue.NumField(); i++ {
-		field := mainValue.Type().Field(i)
-		updateField := updateValue.FieldByName(field.Name)
-
-		if updateField.IsValid() && !updateField.IsNil() {
-			mainValue.FieldByName(field.Name).Set(updateField.Elem())
-		}
+	if update.Username != nil {
+		main.Username = *update.Username
+	}
+	if update.Email != nil {
+		main.Email = *update.Email
+	}
+	if update.FirstName != nil {
+		main.FirstName = *update.FirstName
+	}
+	if update.LastName != nil {
+		main.LastName = *update.LastName
 	}
 }
