@@ -3,7 +3,10 @@ package app
 import (
 	"context"
 	"log"
+	"time"
 
+	"github.com/gin-contrib/cache"
+	"github.com/gin-contrib/cache/persistence"
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -63,9 +66,10 @@ func (app *App) Initialize(mongo_connection, rabbitmq_connection string) error {
 }
 
 func (app *App) initializeRoutes() {
+	store := persistence.NewInMemoryStore(time.Minute)
 	app.router.GET("/ping", Ping)
 	app.router.POST("/account", app.CreateUser)
-	app.router.GET("/account/:id", app.GetUser)
+	app.router.GET("/account/:id", cache.CachePage(store, time.Minute, app.GetUser))
 	app.router.PATCH("/account/:id", app.UpdateUser)
 }
 

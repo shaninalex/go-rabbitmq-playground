@@ -22,6 +22,7 @@ type GetCreateAccount struct {
 func (a *GetCreateAccount) Create(coll *mongo.Collection) (*mongo.InsertOneResult, error) {
 	fmt.Println(a)
 	result := coll.FindOne(context.TODO(), bson.M{"username": a.Username, "email": a.Email})
+	log.Println(result.Err())
 	if result.Err() != nil {
 		return coll.InsertOne(context.TODO(), &a)
 	}
