@@ -29,7 +29,7 @@ func (a *GetCreateAccount) Create(coll *mongo.Collection) (*mongo.InsertOneResul
 }
 
 func (a *GetCreateAccount) Get(coll *mongo.Collection) error {
-	filter := bson.D{{"sub", a.Sub}}
+	filter := bson.D{{Key: "sub", Value: a.Sub}}
 	err := coll.FindOne(context.TODO(), filter).Decode(&a)
 	if err != nil {
 		if err == mongo.ErrNoDocuments {

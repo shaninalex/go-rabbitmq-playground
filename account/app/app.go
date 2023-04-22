@@ -28,6 +28,10 @@ func (app *App) Initialize(mongo_connection, rabbitmq_connection string) error {
 	app.Collection = GetCollection(client, "accounts")
 	indexes := []mongo.IndexModel{
 		{
+			Keys:    bson.D{{Key: "sub", Value: 1}},
+			Options: options.Index().SetUnique(true),
+		},
+		{
 			Keys:    bson.D{{Key: "email", Value: 1}},
 			Options: options.Index().SetUnique(true),
 		},
@@ -36,10 +40,14 @@ func (app *App) Initialize(mongo_connection, rabbitmq_connection string) error {
 			Options: options.Index().SetUnique(true),
 		},
 	}
+
 	indexName, err := app.Collection.Indexes().CreateMany(
 		context.Background(),
 		indexes,
 	)
+	if err != nil {
+		return err
+	}
 	log.Printf("Indexes created: %v", indexName)
 
 	// Connect with RabbitMQ
