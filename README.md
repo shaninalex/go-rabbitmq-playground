@@ -1,7 +1,6 @@
 # Go RabbitmMQ with Gin
 
 This simple repo shows how:
-- to create and start rabbitmq with mongo db
 - connect to broker
 - consume fanout messages
 - push fanout messages
