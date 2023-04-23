@@ -7,11 +7,11 @@ This simple repo shows how:
 
 
 ## TODO
-[] - products service
-[] - add docker docker files to services and add into docker compose config files
-[] - add krakend gateway ( to test this thin https://www.krakend.io/docs/backends/amqp-consumer/ )
-[] - add simple frontend to iteract
-[] - Keycloak?
+- [ ] - products service
+- [ ] - add docker docker files to services and add into docker compose config files
+- [ ] - add krakend gateway ( to test this thin https://www.krakend.io/docs/backends/amqp-consumer/ )
+- [ ] - add simple frontend to iteract
+- [ ] - Keycloak?
 
 ## Note
 
