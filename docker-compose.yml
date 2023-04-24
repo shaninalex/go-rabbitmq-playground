@@ -1,7 +1,40 @@
 version: '3.9'
 
 services:
-  
+
+  account:
+    build: ./account
+    restart: always
+    ports:
+      - 5010:5010
+    env_file:
+      - ./account/.env
+    depends_on:
+      - rabbitmq
+      - mongo
+
+  office:
+    build: ./office
+    restart: always
+    ports:
+      - 5020:5020
+    env_file:
+      - ./office/.env
+    depends_on:
+      - rabbitmq
+      - mongo
+
+  products:
+    build: ./products
+    restart: always
+    ports:
+      - 5030:5030
+    env_file:
+      - ./products/.env
+    depends_on:
+      - rabbitmq
+      - mongo
+
   mongo:
     image: mongo
     ports:
