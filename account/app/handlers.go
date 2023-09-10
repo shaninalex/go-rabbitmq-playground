@@ -25,6 +25,7 @@ func (app *App) CreateUser(c *gin.Context) {
 
 	err := newUser.Create(app.DB)
 	if err != nil {
+		app.ch_error <- err
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}

@@ -12,7 +12,6 @@ import (
 
 func CreateJWT(id int64, email string) (string, error) {
 	// https://www.golinuxcloud.com/golang-jwt/
-	log.Println(email, id)
 	token := jwt.New(jwt.SigningMethodHS256)
 	claims := token.Claims.(jwt.MapClaims)
 

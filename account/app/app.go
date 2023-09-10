@@ -33,7 +33,6 @@ func (app *App) Initialize(database_conn, rabbitmq_conn string) error {
 
 	app.DB = db
 	app.initializeRoutes()
-
 	applog, err := applog.InitializeApplicationLog(rabbitmq_conn)
 	if err != nil {
 		return err
