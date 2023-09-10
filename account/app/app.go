@@ -33,9 +33,8 @@ func (app *App) Initialize(database_conn, rabbitmq_connection string) error {
 
 func (app *App) initializeRoutes() {
 	app.Router.POST("/account", app.CreateUser)
-	// app.router.GET("/account/:id", app.GetUser)
-	// app.router.PATCH("/account/:id", app.UpdateUser)
-	// TODO: login
+	app.Router.GET("/account/:id", app.GetUser)
+	app.Router.POST("/account/login", app.Login)
 }
 
 func (app *App) Run() {
