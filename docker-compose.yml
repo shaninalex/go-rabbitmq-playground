@@ -1,55 +1,60 @@
 version: '3.9'
 
+volumes:
+  postgres_data:
+
 services:
 
-  account:
-    build: ./account
-    restart: always
-    ports:
-      - 5010:5010
-    env_file:
-      - ./account/.env
-    depends_on:
-      - rabbitmq
-      - mongo
-
-  office:
-    build: ./office
-    restart: always
-    ports:
-      - 5020:5020
-    env_file:
-      - ./office/.env
-    depends_on:
-      - rabbitmq
-      - mongo
-
-  products:
-    build: ./products
-    restart: always
-    ports:
-      - 5030:5030
-    env_file:
-      - ./products/.env
-    depends_on:
-      - rabbitmq
-      - mongo
-
-  mongo:
-    image: mongo
-    ports:
-     - '27017:27017'
+  # account:
+  #   build: ./account
+  #   container_name: go_rabbit__account
+  #   restart: always
+  #   ports:
+  #     - 5010:5010
+  #   env:
+  #     - RABBITMQ_URL=${RABBITMQ_URL}
+  #     - POSTGRES_USER=${POSTGRES_USER}
+  #     - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+  #     - POSTGRES_DB=${POSTGRES_DB}
+  #     - POSTGRES_HOST=${POSTGRES_HOST}
+  #     - SERVICE_ACCOUNT_PORT=${SERVICE_ACCOUNT_PORT}
+  #   depends_on:
+  #     - postgres
 
   rabbitmq:
     image: rabbitmq:3-management-alpine
+    container_name: go_rabbit__rabbitmq
     ports:
       - 5672:5672
       - 15672:15672
 
-  redis:
-    image: redis
-    command: redis-server /usr/local/etc/redis/redis.conf
-    volumes:
-      - ./configs/redis/redis.conf:/usr/local/etc/redis/redis.conf
+  postgres:
+    image: postgres:latest
+    container_name: go_rabbit__postgres
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
     ports:
-      - "6379:6379"
+      - 5432:5432
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -d $${POSTGRES_DB} -U $${POSTGRES_USER}" ]
+      interval: 5s
+      timeout: 10s
+      retries: 120
+
+  application-migrate:
+    build: ./configs/application-migrate
+    container_name: go_rabbit__migrate
+    environment:
+      DB_HOST: ${POSTGRES_HOST}
+      DB_PORT: 5432
+      DB_USER: ${POSTGRES_USER}
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+      DB_NAME: ${POSTGRES_DB}
+    restart: on-failure
+    depends_on:
+      postgres:
+        condition: service_healthy

@@ -1,122 +1,62 @@
 package models
 
 import (
-	"context"
-	"errors"
-	"fmt"
-	"log"
-	"reflect"
+	"account/app/utils"
+	"database/sql"
 
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/mongo"
+	"github.com/doug-martin/goqu/v9"
 )
 
-type GetCreateAccount struct {
-	Sub       string `json:"id,omitempty"`
-	Username  string `json:"username" binding:"required"`
-	Email     string `json:"email" binding:"required"`
-	FirstName string `json:"lastname" binding:"required"`
-	LastName  string `json:"firstname" binding:"required"`
+type NewUser struct {
+	Id       int64  `json:"id"`
+	Name     string `json:"name" binding:"required"`
+	Email    string `json:"email" binding:"required"`
+	Password string `json:"password" binding:"required"`
 }
 
-func (a *GetCreateAccount) Create(coll *mongo.Collection) (*mongo.InsertOneResult, error) {
-	fmt.Println(a)
-	result := coll.FindOne(context.TODO(), bson.M{"username": a.Username, "email": a.Email})
-	log.Println(result.Err())
-	if result.Err() != nil {
-		return coll.InsertOne(context.TODO(), &a)
-	}
-	return nil, errors.New("account already exists")
-}
-
-func (a *GetCreateAccount) Get(coll *mongo.Collection) error {
-	filter := bson.D{{Key: "sub", Value: a.Sub}}
-	err := coll.FindOne(context.TODO(), filter).Decode(&a)
+func (a *NewUser) Create(db *sql.DB) error {
+	passwordHash, err := utils.GenerateFromPassword(a.Password)
 	if err != nil {
-		if err == mongo.ErrNoDocuments {
-			return errors.New("account not found")
-		}
+		return err
+	}
+	ds := goqu.Insert("users").Rows(
+		goqu.Record{
+			"name":     a.Name,
+			"email":    a.Email,
+			"password": passwordHash,
+		},
+	).Returning("id")
+	insertSQL, _, _ := ds.ToSQL()
+	err = db.QueryRow(insertSQL).Scan(&a.Id)
+	if err != nil {
 		return err
 	}
 	return nil
 }
 
-type UpdateAccount struct {
-	Username  *string
-	Email     *string
-	FirstName *string
-	LastName  *string
+type User struct {
+	Id       int64  `json:"id" binding:"required"`
+	Name     string `json:"name" binding:"required"`
+	Email    string `json:"email" binding:"required"`
+	Password string `json:"-"`
 }
 
-func Update(coll *mongo.Collection, sub string, payload UpdateAccount) error {
-	filter := bson.M{"sub": sub}
-
-	var account GetCreateAccount
-	if err := coll.FindOne(context.TODO(), filter).Decode(&account); err != nil {
-		if err == mongo.ErrNoDocuments {
-			return errors.New("account not found")
-		}
-		return err
+func (a *User) Get(db *sql.DB, email string, user_id int64) error {
+	ds := goqu.From("users").Select(
+		"id", "name", "email", "password",
+	)
+	if email != "" {
+		ds = ds.Where(goqu.C("email").Eq(email))
+	} else {
+		ds = ds.Where(goqu.C("id").Eq(user_id))
 	}
 
-	updateAccountStruct(&account, &payload)
-
-	myBSONM, err := createBSONM(account)
+	insertSQL, _, _ := ds.ToSQL()
+	err := db.QueryRow(insertSQL).Scan(
+		&a.Id, &a.Name, &a.Email, &a.Password,
+	)
 	if err != nil {
 		return err
 	}
-
-	result := coll.FindOneAndUpdate(context.Background(), filter, bson.M{"$set": myBSONM})
-	if result.Err() != nil {
-		return result.Err()
-	}
-
-	log.Printf("Updated account: %s with: %v", sub, payload)
 	return nil
-}
-
-func createBSONM(myStruct interface{}) (bson.M, error) {
-	// Marshal the MyStruct object into a BSON document
-	myStructBytes, err := bson.Marshal(myStruct)
-	if err != nil {
-		return nil, err
-	}
-
-	// Unmarshal the BSON document into a bson.M map
-	var myBSONM bson.M
-	err = bson.Unmarshal(myStructBytes, &myBSONM)
-	if err != nil {
-		return nil, err
-	}
-
-	// Modify the bson.M map to use the JSON names of the fields
-	s := reflect.ValueOf(myStruct)
-	typeOfT := s.Type()
-
-	for i := 0; i < s.NumField(); i++ {
-		tag := typeOfT.Field(i).Tag.Get("json")
-
-		// Remove the original key and replace it with the JSON name
-		if key, ok := myBSONM[typeOfT.Field(i).Name]; ok {
-			delete(myBSONM, typeOfT.Field(i).Name)
-			myBSONM[tag] = key
-		}
-	}
-
-	return myBSONM, nil
-}
-
-func updateAccountStruct(main *GetCreateAccount, update *UpdateAccount) {
-	if update.Username != nil {
-		main.Username = *update.Username
-	}
-	if update.Email != nil {
-		main.Email = *update.Email
-	}
-	if update.FirstName != nil {
-		main.FirstName = *update.FirstName
-	}
-	if update.LastName != nil {
-		main.LastName = *update.LastName
-	}
 }

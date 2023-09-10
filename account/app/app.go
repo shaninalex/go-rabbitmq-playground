@@ -1,94 +1,75 @@
 package app
 
 import (
-	"context"
-	"log"
-	"time"
+	"account/app/applog"
+	"account/app/models"
+	"database/sql"
+	"fmt"
+	"os"
 
-	"github.com/gin-contrib/cache"
-	"github.com/gin-contrib/cache/persistence"
 	"github.com/gin-gonic/gin"
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
-
-	amqp "github.com/rabbitmq/amqp091-go"
+	_ "github.com/lib/pq"
 )
 
-// TODO: add rabbitmq exchange instead. For example:
-// - "loggin" - for sending logging messages
-// - "manage" - background tasks like update avatar link from filestorage service, or schedule payments etc...
+var (
+	SERVICE_ACCOUNT_PORT = os.Getenv("SERVICE_ACCOUNT_PORT")
+)
+
 type App struct {
-	Collection   *mongo.Collection
-	router       *gin.Engine
-	MQConnection *amqp.Connection
-	MQChannel    *amqp.Channel
-	MQQueue      *amqp.Queue
+	Router   *gin.Engine
+	DB       *sql.DB
+	ch_user  chan *models.NewUser
+	ch_login chan int64
+	ch_error chan error
+	Log      *applog.AppLog
 }
 
-func (app *App) Initialize(mongo_connection, rabbitmq_connection string) error {
-	app.router = gin.Default()
-	client := ConnectDB(mongo_connection)
-	app.Collection = GetCollection(client, "accounts")
-	indexes := []mongo.IndexModel{
-		{
-			Keys:    bson.D{{Key: "sub", Value: 1}},
-			Options: options.Index().SetUnique(true),
-		},
-		{
-			Keys:    bson.D{{Key: "email", Value: 1}},
-			Options: options.Index().SetUnique(true),
-		},
-		{
-			Keys:    bson.D{{Key: "username", Value: 1}},
-			Options: options.Index().SetUnique(true),
-		},
-	}
-
-	indexName, err := app.Collection.Indexes().CreateMany(
-		context.Background(),
-		indexes,
-	)
-	if err != nil {
-		return err
-	}
-	log.Printf("Indexes created: %v", indexName)
-
-	// Connect with RabbitMQ
-	mq_connection, err := connectToRabbitMQ(rabbitmq_connection)
+func (app *App) Initialize(database_conn, rabbitmq_conn string) error {
+	app.Router = gin.Default()
+	db, err := sql.Open("postgres", database_conn)
 	if err != nil {
 		return err
 	}
 
-	ch, err := mq_connection.Channel()
-	failOnError(err, "Failed to open a channel")
-	q, err := ch.QueueDeclare(
-		"register", // name
-		false,      // durable
-		false,      // delete when unused
-		false,      // exclusive
-		false,      // no-wait
-		nil,        // arguments
-	)
-	failOnError(err, "Failed to declare a queue")
-
-	app.MQConnection = mq_connection
-	app.MQChannel = ch
-	app.MQQueue = &q
-
+	app.DB = db
 	app.initializeRoutes()
+	applog, err := applog.InitializeApplicationLog(rabbitmq_conn)
+	if err != nil {
+		return err
+	}
+
+	app.Log = applog
+	app.ch_user = make(chan *models.NewUser)
+	app.ch_login = make(chan int64)
+	app.ch_error = make(chan error)
 
 	return nil
 }
 
 func (app *App) initializeRoutes() {
-	store := persistence.NewInMemoryStore(time.Minute)
-	app.router.GET("/ping", Ping)
-	app.router.POST("/account", app.CreateUser)
-	app.router.GET("/account/:id", cache.CachePage(store, time.Minute, app.GetUser))
-	app.router.PATCH("/account/:id", app.UpdateUser)
+	app.Router.POST("/account", app.CreateUser)
+	app.Router.POST("/account/login", app.Login)
+
+	private := app.Router.Group("/user")
+	private.Use(AuthMiddleware())
+	{
+		private.GET("/:id", app.GetUser)
+	}
 }
 
 func (app *App) Run() {
-	app.router.Run("localhost:8000")
+	app.Router.Run(fmt.Sprintf(":%s", SERVICE_ACCOUNT_PORT))
+}
+
+func (app *App) ListenChannels() {
+	for {
+		select {
+		case user := <-app.ch_user:
+			go app.Log.UserCreated(user)
+		case user_id := <-app.ch_login:
+			go app.Log.UserLoggined(user_id)
+		case err := <-app.ch_error:
+			go app.Log.ErrorHappend(err)
+		}
+	}
 }

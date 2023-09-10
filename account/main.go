@@ -2,17 +2,29 @@ package main
 
 import (
 	"account/app"
-	"log"
+	"fmt"
+	"os"
+)
+
+var (
+	POSTGRES_URL = fmt.Sprintf(
+		"postgresql://%s:%s@%s:5432/%s?sslmode=disable",
+		os.Getenv("POSTGRES_USER"),
+		os.Getenv("POSTGRES_PASSWORD"),
+		os.Getenv("POSTGRES_HOST"),
+		os.Getenv("POSTGRES_DB"),
+	)
+	RABBITMQ_URL = os.Getenv("RABBITMQ_URL")
 )
 
 func main() {
-	log.Println("Account server is running")
-
 	app := app.App{}
-	app.Initialize("mongodb://127.0.0.1:27017", "amqp://guest:guest@localhost:5672/")
-
-	// need defer connections here, because in other case - thay close after Initialize end
-	defer app.MQConnection.Close()
-	defer app.MQChannel.Close()
+	err := app.Initialize(POSTGRES_URL, RABBITMQ_URL)
+	defer app.Log.Connection.Close()
+	defer app.Log.Channel.Close()
+	if err != nil {
+		panic(err)
+	}
+	go app.ListenChannels()
 	app.Run()
 }
