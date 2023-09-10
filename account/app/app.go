@@ -11,10 +11,6 @@ import (
 	_ "github.com/lib/pq"
 )
 
-var (
-	SERVICE_ACCOUNT_PORT = os.Getenv("SERVICE_ACCOUNT_PORT")
-)
-
 type App struct {
 	Router   *gin.Engine
 	DB       *sql.DB
@@ -58,7 +54,8 @@ func (app *App) initializeRoutes() {
 }
 
 func (app *App) Run() {
-	app.Router.Run(fmt.Sprintf(":%s", SERVICE_ACCOUNT_PORT))
+	gin.SetMode(gin.ReleaseMode)
+	app.Router.Run(fmt.Sprintf(":%s", os.Getenv("SERVICE_ACCOUNT_PORT")))
 }
 
 func (app *App) ListenChannels() {
