@@ -20,11 +20,11 @@ type App struct {
 
 func (app *App) Initialize(database_conn, rabbitmq_connection string) error {
 	app.Router = gin.Default()
-
 	db, err := sql.Open("postgres", database_conn)
 	if err != nil {
 		panic(err)
 	}
+
 	app.DB = db
 	app.initializeRoutes()
 
@@ -33,8 +33,13 @@ func (app *App) Initialize(database_conn, rabbitmq_connection string) error {
 
 func (app *App) initializeRoutes() {
 	app.Router.POST("/account", app.CreateUser)
-	app.Router.GET("/account/:id", app.GetUser)
 	app.Router.POST("/account/login", app.Login)
+
+	private := app.Router.Group("/user")
+	private.Use(AuthMiddleware())
+	{
+		private.GET("/:id", app.GetUser)
+	}
 }
 
 func (app *App) Run() {

@@ -18,7 +18,6 @@ var (
 )
 
 func main() {
-
 	app := app.App{}
 	app.Initialize(POSTGRES_URL, RABBITMQ_URL)
 	app.Run()

@@ -3,12 +3,12 @@ module account
 go 1.20
 
 require (
-	github.com/alexedwards/argon2id v0.0.0-20230305115115-4b3c3280a736
 	github.com/doug-martin/goqu/v9 v9.18.0
 	github.com/gin-gonic/gin v1.9.0
 	github.com/golang-jwt/jwt/v4 v4.5.0
 	github.com/lib/pq v1.10.9
 	github.com/rabbitmq/amqp091-go v1.8.0
+	golang.org/x/crypto v0.13.0
 )
 
 require (
@@ -29,7 +29,6 @@ require (
 	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect
 	github.com/ugorji/go/codec v1.2.11 // indirect
 	golang.org/x/arch v0.3.0 // indirect
-	golang.org/x/crypto v0.13.0 // indirect
 	golang.org/x/net v0.10.0 // indirect
 	golang.org/x/sys v0.12.0 // indirect
 	golang.org/x/text v0.13.0 // indirect

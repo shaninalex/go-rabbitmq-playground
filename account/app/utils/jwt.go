@@ -1,6 +1,7 @@
-package app
+package utils
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -31,7 +32,7 @@ func CreateJWT(id int64, email string) (string, error) {
 func ValidateToken(t string) (jwt.MapClaims, error) {
 	token, err := jwt.Parse(t, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, fmt.Errorf("There was an error in parsing")
+			return nil, errors.New("there was an error in parsing")
 		}
 		return []byte(os.Getenv("SECRET_KEY")), nil
 	})

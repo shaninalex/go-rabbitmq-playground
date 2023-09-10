@@ -19,7 +19,7 @@ func (app *App) CreateUser(c *gin.Context) {
 	var newUser models.NewUser
 	if err := c.ShouldBindJSON(&newUser); err != nil {
 		log.Println(err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
@@ -39,13 +39,13 @@ func (app *App) GetUser(c *gin.Context) {
 	}
 	user_id, err := strconv.ParseInt(id, 10, 64)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 	var account models.User
 	err = account.Get(app.DB, "", user_id)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
 		return
 	}
 
@@ -53,7 +53,7 @@ func (app *App) GetUser(c *gin.Context) {
 }
 
 func (app *App) Login(c *gin.Context) {
-	var loginPayload LoginPayload
+	var loginPayload models.LoginPayload
 	if err := c.ShouldBindJSON(&loginPayload); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
