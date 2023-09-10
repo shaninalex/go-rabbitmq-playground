@@ -9,12 +9,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func Ping(c *gin.Context) {
-	c.JSON(200, gin.H{
-		"message": "pong",
-	})
-}
-
 func (app *App) CreateUser(c *gin.Context) {
 	var newUser models.NewUser
 	if err := c.ShouldBindJSON(&newUser); err != nil {
