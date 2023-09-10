@@ -4,52 +4,43 @@ services:
 
   account:
     build: ./account
+    container_name: go_rabbit__account
     restart: always
     ports:
       - 5010:5010
-    env_file:
-      - ./account/.env
+    env:
+      - RABBITMQ_URL=${RABBITMQ_URL}
     depends_on:
-      - rabbitmq
-      - mongo
+      - postgres
 
-  office:
-    build: ./office
-    restart: always
-    ports:
-      - 5020:5020
-    env_file:
-      - ./office/.env
-    depends_on:
-      - rabbitmq
-      - mongo
-
-  products:
-    build: ./products
-    restart: always
-    ports:
-      - 5030:5030
-    env_file:
-      - ./products/.env
-    depends_on:
-      - rabbitmq
-      - mongo
-
-  mongo:
-    image: mongo
-    ports:
-     - '27017:27017'
-
+  # office:
+  #   build: ./office
+  #   container_name: go_rabbit__office
+  #   restart: always
+  #   ports:
+  #     - 5020:5020
+  #   # env_file:
+  #   #   - ./office/.env
+  #   depends_on:
+  #     - rabbitmq
+  #     - mongo
+  #
+  # products:
+  #   build: ./products
+  #   container_name: go_rabbit__products
+  #   restart: always
+  #   ports:
+  #     - 5030:5030
+  #   # env_file:
+  #   #   - ./products/.env
+  #   depends_on:
+  #     - rabbitmq
+  #     - mongo
+  #
   rabbitmq:
     image: rabbitmq:3-management-alpine
+    container_name: go_rabbit__rabbitmq
     ports:
       - 5672:5672
       - 15672:15672
 
-  redis:
-    image: redis
-    command: redis-server /usr/local/etc/redis/redis.conf
-    volumes:
-      - ./configs/redis/redis.conf:/usr/local/etc/redis/redis.conf
-    ports:
-      - "6379:6379"

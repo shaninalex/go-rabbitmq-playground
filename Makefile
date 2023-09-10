@@ -1,5 +1,4 @@
-restart:
-	docker compose down -v
+start:
 	docker compose up -d --build
 
 down:
