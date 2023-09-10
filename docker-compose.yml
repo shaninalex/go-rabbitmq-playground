@@ -21,12 +21,12 @@ services:
   #   depends_on:
   #     - postgres
 
-  # rabbitmq:
-  #   image: rabbitmq:3-management-alpine
-  #   container_name: go_rabbit__rabbitmq
-  #   ports:
-  #     - 5672:5672
-  #     - 15672:15672
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: go_rabbit__rabbitmq
+    ports:
+      - 5672:5672
+      - 15672:15672
 
   postgres:
     image: postgres:latest

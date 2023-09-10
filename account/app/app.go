@@ -1,6 +1,8 @@
 package app
 
 import (
+	"account/app/applog"
+	"account/app/models"
 	"database/sql"
 	"fmt"
 	"os"
@@ -14,19 +16,33 @@ var (
 )
 
 type App struct {
-	Router *gin.Engine
-	DB     *sql.DB
+	Router   *gin.Engine
+	DB       *sql.DB
+	ch_user  chan *models.NewUser
+	ch_login chan int64
+	ch_error chan error
+	Log      *applog.AppLog
 }
 
-func (app *App) Initialize(database_conn, rabbitmq_connection string) error {
+func (app *App) Initialize(database_conn, rabbitmq_conn string) error {
 	app.Router = gin.Default()
 	db, err := sql.Open("postgres", database_conn)
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	app.DB = db
 	app.initializeRoutes()
+
+	applog, err := applog.InitializeApplicationLog(rabbitmq_conn)
+	if err != nil {
+		return err
+	}
+
+	app.Log = applog
+	app.ch_user = make(chan *models.NewUser)
+	app.ch_login = make(chan int64)
+	app.ch_error = make(chan error)
 
 	return nil
 }
@@ -44,4 +60,17 @@ func (app *App) initializeRoutes() {
 
 func (app *App) Run() {
 	app.Router.Run(fmt.Sprintf(":%s", SERVICE_ACCOUNT_PORT))
+}
+
+func (app *App) ListenChannels() {
+	for {
+		select {
+		case user := <-app.ch_user:
+			go app.Log.UserCreated(user)
+		case user_id := <-app.ch_login:
+			go app.Log.UserLoggined(user_id)
+		case err := <-app.ch_error:
+			go app.Log.ErrorHappend(err)
+		}
+	}
 }

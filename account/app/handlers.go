@@ -29,6 +29,8 @@ func (app *App) CreateUser(c *gin.Context) {
 		return
 	}
 
+	app.ch_user <- &newUser
+
 	c.JSON(http.StatusCreated, gin.H{"inserted_id": newUser.Id})
 }
 
@@ -68,9 +70,11 @@ func (app *App) Login(c *gin.Context) {
 
 	hash, err := loginPayload.Login(account.Password, account.Id)
 	if err != nil {
+		app.ch_error <- err
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
+	app.ch_login <- account.Id
 	c.JSON(http.StatusOK, gin.H{"access_token": hash})
 }

@@ -19,6 +19,12 @@ var (
 
 func main() {
 	app := app.App{}
-	app.Initialize(POSTGRES_URL, RABBITMQ_URL)
+	err := app.Initialize(POSTGRES_URL, RABBITMQ_URL)
+	defer app.Log.Connection.Close()
+	defer app.Log.Channel.Close()
+	if err != nil {
+		panic(err)
+	}
+	go app.ListenChannels()
 	app.Run()
 }
