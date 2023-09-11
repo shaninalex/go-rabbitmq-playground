@@ -6,6 +6,7 @@ import (
 	"products/app/models"
 
 	"github.com/doug-martin/goqu/v9"
+	_ "github.com/lib/pq"
 )
 
 type QueryParams struct {

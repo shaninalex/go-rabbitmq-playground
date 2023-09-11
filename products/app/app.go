@@ -1,6 +1,8 @@
 package app
 
 import (
+	"fmt"
+	"os"
 	"products/app/controllers"
 
 	"github.com/gin-gonic/gin"
@@ -19,10 +21,8 @@ func Initialize(rabbitmq_url, postgres_url string) (*App, error) {
 		return nil, err
 	}
 	app.controller = pc
+	app.initializeRoutes()
 	return app, nil
-}
-
-func (app *App) Run() {
 }
 
 func (app *App) initializeRoutes() {
@@ -31,4 +31,8 @@ func (app *App) initializeRoutes() {
 	app.router.GET("/products/:id", app.ProductDetail)
 	app.router.PATCH("/products/:id", app.ProductPatch)
 	app.router.DELETE("/products/:id", app.ProductDelete)
+}
+
+func (app *App) Run() {
+	app.router.Run(fmt.Sprintf(":%s", os.Getenv("PRODUCTS_SERVICE_PORT")))
 }

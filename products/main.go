@@ -6,7 +6,13 @@ import (
 )
 
 func main() {
-	app := app.App{}
-	app.Initialize(os.Getenv("RABBITMQ_URL"))
-	app.Run()
+	application, err := app.Initialize(
+		os.Getenv("RABBITMQ_URL"),
+		os.Getenv("POSTGRESQL_URL"),
+	)
+	if err != nil {
+		panic(err)
+	}
+
+	application.Run()
 }
