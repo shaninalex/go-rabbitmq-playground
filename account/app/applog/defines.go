@@ -1,19 +1,22 @@
 package applog
 
 import (
+	"log"
+
 	amqp "github.com/rabbitmq/amqp091-go"
 )
 
 func (applog *AppLog) defineQueues() error {
 	q_new_user, err := applog.Channel.QueueDeclare(
-		"q.new-user", // name
-		false,        // durable
-		false,        // delete when unused
-		false,        // exclusive
-		false,        // no-wait
-		nil,          // arguments
+		"q.user-register", // name
+		false,             // durable
+		false,             // delete when unused
+		false,             // exclusive
+		false,             // no-wait
+		nil,               // arguments
 	)
 	if err != nil {
+		log.Println(err)
 		return err
 	}
 	applog.qNewUser = q_new_user
@@ -27,6 +30,7 @@ func (applog *AppLog) defineQueues() error {
 		nil,            // arguments
 	)
 	if err != nil {
+		log.Println(err)
 		return err
 	}
 	applog.qUserLogin = q_user_login
@@ -40,6 +44,7 @@ func (applog *AppLog) defineQueues() error {
 		nil,                   // arguments
 	)
 	if err != nil {
+		log.Println(err)
 		return err
 	}
 	applog.qErrorLog = q_log

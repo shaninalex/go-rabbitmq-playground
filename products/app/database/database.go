@@ -2,7 +2,6 @@ package database
 
 import (
 	"database/sql"
-	"log"
 	"products/app/models"
 
 	"github.com/doug-martin/goqu/v9"
@@ -107,11 +106,10 @@ func (pdbc *ProductDBController) Delete(product_id int64) error {
 	if err != nil {
 		return err
 	}
-	rows, err := res.RowsAffected()
+	_, err = res.RowsAffected()
 	if err != nil {
 		return err
 	}
-	log.Println("Rows deleted: ", rows)
 	return nil
 }
 
@@ -121,10 +119,9 @@ func (pdbc *ProductDBController) Patch(product_id int64, payload *models.Product
 	).Where(goqu.C("id").Eq(product_id))
 	updateSQL, _, _ := q.ToSQL()
 	res, err := pdbc.db.Exec(updateSQL)
-	rows, err := res.RowsAffected()
+	_, err = res.RowsAffected()
 	if err != nil {
 		return err
 	}
-	log.Println("Rows updated: ", rows)
 	return nil
 }

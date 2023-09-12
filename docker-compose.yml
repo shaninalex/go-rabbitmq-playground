@@ -5,22 +5,33 @@ volumes:
 
 services:
 
+  products:
+    build: ./products
+    container_name: go_rabbit__products
+    restart: always
+    ports:
+      - 5020:5020
+    env_file:
+      - .env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
   account:
     build: ./account
     container_name: go_rabbit__account
     restart: always
     ports:
-      - ${SERVICE_ACCOUNT_PORT}:${SERVICE_ACCOUNT_PORT}
-    environment:
-      - RABBITMQ_URL=${RABBITMQ_URL}
-      - POSTGRES_USER=${POSTGRES_USER}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-      - POSTGRES_DB=${POSTGRES_DB}
-      - POSTGRES_HOST=${POSTGRES_HOST}
-      - SERVICE_ACCOUNT_PORT=${SERVICE_ACCOUNT_PORT}
-      - SECRET_KEY=${SERVICE_ACCOUNT_SECRET_KEY}
+      - 5010:5010
+    env_file:
+      - .env
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy    
 
   rabbitmq:
     image: rabbitmq:3-management-alpine
@@ -28,14 +39,17 @@ services:
     ports:
       - 5672:5672
       - 15672:15672
-
+    healthcheck:
+      test: rabbitmq-diagnostics -q ping
+      interval: 10s
+      timeout: 10s
+      retries: 3
+      
   postgres:
     image: postgres:latest
     container_name: go_rabbit__postgres
-    environment:
-      - POSTGRES_USER=${POSTGRES_USER}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-      - POSTGRES_DB=${POSTGRES_DB}
+    env_file:
+      - .env
     ports:
       - 5432:5432
     volumes:
@@ -49,12 +63,8 @@ services:
   application-migrate:
     build: ./configs/application-migrate
     container_name: go_rabbit__migrate
-    environment:
-      - DB_HOST=${POSTGRES_HOST}
-      - DB_PORT=5432
-      - DB_USER=${POSTGRES_USER}
-      - PGPASSWORD=${POSTGRES_PASSWORD}
-      - DB_NAME=${POSTGRES_DB}
+    env_file:
+      - .env
     restart: on-failure
     depends_on:
       postgres:

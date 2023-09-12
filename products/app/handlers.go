@@ -27,7 +27,7 @@ func (app *App) ProductCreate(c *gin.Context) {
 		return
 	}
 
-	app.logger.Log("created", product)
+	go app.logger.Log("created", product)
 
 	c.JSON(http.StatusOK, product)
 }
@@ -75,6 +75,8 @@ func (app *App) ProductDelete(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid product id"})
 		return
 	}
+
+	// TODO: What if product was not deleted?
 	go app.controller.Delete(productId)
 	go app.logger.Log("deleted", productId)
 
