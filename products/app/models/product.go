@@ -21,7 +21,6 @@ func (p *Product) Init() {
 
 const charset = "1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
-
 func randomString(n int) string {
 	sb := strings.Builder{}
 	sb.Grow(n)

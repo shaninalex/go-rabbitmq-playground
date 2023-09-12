@@ -83,8 +83,8 @@ func (pdbc *ProductDBController) Get(product_id int64) (*models.Product, error) 
 func (pdbc *ProductDBController) Create(product *models.Product) error {
 	q := goqu.Insert("products").Rows(
 		goqu.Record{
-			"name": product.Name,
-			"price": product.Price,
+			"name":         product.Name,
+			"price":        product.Price,
 			"product_code": product.ProductCode,
 		},
 	).Returning(

@@ -1,4 +1,4 @@
-export RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672
+export RABBITMQ_URL=amqp://guest:guest@localhost:5672
 
 export POSTGRES_USER=postgres
 export POSTGRES_PASSWORD=postgres

@@ -27,6 +27,8 @@ func (app *App) ProductCreate(c *gin.Context) {
 		return
 	}
 
+	app.logger.Log("created", product)
+
 	c.JSON(http.StatusOK, product)
 }
 
@@ -62,6 +64,8 @@ func (app *App) ProductPatch(c *gin.Context) {
 		return
 	}
 
+	go app.logger.Log("updated", productId)
+
 	c.JSON(http.StatusOK, nil)
 }
 
@@ -72,5 +76,7 @@ func (app *App) ProductDelete(c *gin.Context) {
 		return
 	}
 	go app.controller.Delete(productId)
+	go app.logger.Log("deleted", productId)
+
 	c.JSON(http.StatusOK, nil)
 }

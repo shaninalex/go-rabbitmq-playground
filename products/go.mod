@@ -6,6 +6,7 @@ require (
 	github.com/doug-martin/goqu/v9 v9.18.0
 	github.com/gin-gonic/gin v1.9.0
 	github.com/lib/pq v1.10.9
+	github.com/rabbitmq/amqp091-go v1.8.1
 )
 
 require (

@@ -11,6 +11,8 @@ import (
 type App struct {
 	router     *gin.Engine
 	controller *controllers.ProductController
+	logger     *Logger
+	ch_log     chan string
 }
 
 func Initialize(rabbitmq_url, postgres_url string) (*App, error) {
@@ -20,6 +22,9 @@ func Initialize(rabbitmq_url, postgres_url string) (*App, error) {
 	if err != nil {
 		return nil, err
 	}
+	app.ch_log = make(chan string)
+	logger := InitLogger(rabbitmq_url)
+	app.logger = logger
 	app.controller = pc
 	app.initializeRoutes()
 	return app, nil
