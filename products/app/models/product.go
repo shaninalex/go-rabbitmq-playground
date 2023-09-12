@@ -19,7 +19,8 @@ func (p *Product) Init() {
 	p.CreatedAt = time.Now()
 }
 
-const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+const charset = "1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+
 
 func randomString(n int) string {
 	sb := strings.Builder{}

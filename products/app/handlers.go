@@ -9,7 +9,11 @@ import (
 )
 
 func (app *App) ProductsList(c *gin.Context) {
-	// TODO: filter and pagination by the query params
+	products, err := app.controller.GetAll()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"errors": err})
+	}
+	c.JSON(http.StatusOK, products)
 }
 
 func (app *App) ProductCreate(c *gin.Context) {
@@ -27,7 +31,7 @@ func (app *App) ProductCreate(c *gin.Context) {
 }
 
 func (app *App) ProductDetail(c *gin.Context) {
-	productId, err := strconv.ParseInt(c.Query("id"), 10, 64)
+	productId, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid product id"})
 		return
@@ -41,7 +45,7 @@ func (app *App) ProductDetail(c *gin.Context) {
 }
 
 func (app *App) ProductPatch(c *gin.Context) {
-	productId, err := strconv.ParseInt(c.Query("id"), 10, 64)
+	productId, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid product id"})
 		return
@@ -62,7 +66,7 @@ func (app *App) ProductPatch(c *gin.Context) {
 }
 
 func (app *App) ProductDelete(c *gin.Context) {
-	productId, err := strconv.ParseInt(c.Query("id"), 10, 64)
+	productId, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid product id"})
 		return
