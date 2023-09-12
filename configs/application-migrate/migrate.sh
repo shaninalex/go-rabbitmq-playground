@@ -1,11 +1,11 @@
 #!/bin/bash
 
 # Get the PostgreSQL database credentials from environment variables
-DB_HOST="$DB_HOST"
-DB_PORT="$DB_PORT"
-DB_NAME="$DB_NAME"
-DB_USER="$DB_USER"
-PGPASSWORD="$PGPASSWORD"
+DB_HOST="$POSTGRES_HOST"
+DB_PORT=5432
+DB_NAME="$POSTGRES_DB"
+DB_USER="$POSTGRES_USER"
+PGPASSWORD="$POSTGRES_PASSWORD"
 
 # Path to the SQL migration file
 MIGRATION_FILE="./schema.sql"

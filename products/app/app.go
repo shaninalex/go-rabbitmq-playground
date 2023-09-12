@@ -1,32 +1,43 @@
 package app
 
 import (
-	"time"
+	"fmt"
+	"os"
+	"products/app/controllers"
 
-	"github.com/gin-contrib/cache"
-	"github.com/gin-contrib/cache/persistence"
 	"github.com/gin-gonic/gin"
-	amqp "github.com/rabbitmq/amqp091-go"
-	"go.mongodb.org/mongo-driver/mongo"
 )
 
 type App struct {
-	MQConnection *amqp.Connection
-	MQChannel    *amqp.Channel
-	MQQueue      *amqp.Queue
-	router       *gin.Engine
-	Collection   *mongo.Collection
+	router     *gin.Engine
+	controller *controllers.ProductController
+	logger     *Logger
+	ch_log     chan string
 }
 
-func (app *App) Initialize(rabbitmqConnectionString string) error {
-	return nil
-}
-
-func (app *App) Run() {
+func Initialize(rabbitmq_url, postgres_url string) (*App, error) {
+	app := &App{}
+	app.router = gin.Default()
+	pc, err := controllers.Init(postgres_url)
+	if err != nil {
+		return nil, err
+	}
+	app.ch_log = make(chan string)
+	logger := InitLogger(rabbitmq_url)
+	app.logger = logger
+	app.controller = pc
+	app.initializeRoutes()
+	return app, nil
 }
 
 func (app *App) initializeRoutes() {
-	store := persistence.NewInMemoryStore(time.Minute)
-	app.router.GET("/products", cache.CachePage(store, time.Minute, app.ProductsList))
-	app.router.GET("/product/:id", app.ProductDetail)
+	app.router.GET("/products", app.ProductsList)
+	app.router.POST("/products", app.ProductCreate)
+	app.router.GET("/products/:id", app.ProductDetail)
+	app.router.PATCH("/products/:id", app.ProductPatch)
+	app.router.DELETE("/products/:id", app.ProductDelete)
+}
+
+func (app *App) Run() {
+	app.router.Run(fmt.Sprintf(":%s", os.Getenv("PRODUCTS_SERVICE_PORT")))
 }
