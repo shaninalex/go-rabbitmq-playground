@@ -13,7 +13,6 @@ CREATE TABLE IF NOT EXISTS products
     name TEXT NOT NULL UNIQUE,
     product_code VARCHAR(8) NOT NULL,
     price FLOAT NOT NULL,
-    quantity INTEGER NOT NULL,
     created_at TIMESTAMP DEFAULT current_timestamp
 );
 
@@ -33,6 +32,7 @@ CREATE TABLE IF NOT EXISTS order_products
     order_id INTEGER NOT NULL,
     product_id INTEGER NOT NULL,
     price FLOAT NOT NULL,
+    quantity INTEGER NOT NULL,
     created_at TIMESTAMP DEFAULT current_timestamp,
     FOREIGN KEY (order_id) REFERENCES orders(id),
     FOREIGN KEY (product_id) REFERENCES products(id)
